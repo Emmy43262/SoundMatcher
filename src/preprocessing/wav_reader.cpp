@@ -1,9 +1,28 @@
 #include <iostream>
 #include <fstream>
 
+short read_sample(std::ifstream *file, bool stereo)
+{
+    short sample, right_channel;
+
+    if (file->read((char *)&sample, 2).eof())
+    {
+        std::cout << "EOF reachedd\n";
+        return 0;
+    }
+
+    if (stereo) // take average of channels
+    {
+        file->read((char *)&right_channel, 2);
+        sample = (sample + right_channel) / 2;
+    }
+
+    return sample;
+}
+
 void read_wav(char *filepath)
 {
-    std::ifstream audio_file(filepath);
+    std::ifstream audio_file(filepath, std::ios::binary);
 
     char buf[32];
     audio_file.read(buf, 16); // skip intro
@@ -19,8 +38,9 @@ void read_wav(char *filepath)
     audio_file.read((char *)&bits_per_sample, 2);
 
     audio_file.read(buf, 4); // skip id
-    std::cout << buf << '\n';
     audio_file.read((char *)&data_size, 4);
+
+    std::cout << data_size << '\n';
 
     if (channels > 2)
     {
@@ -29,35 +49,15 @@ void read_wav(char *filepath)
     }
 
     int bytes_per_sample = bits_per_sample >> 3;
-    int samples_per_iteration = 10; // sliding window size
+    int samples_per_iteration = 100; // sliding window size
     int num_iterations = data_size / bytes_per_sample / samples_per_iteration / channels;
 
     for (int i = 0; i < num_iterations; i++)
     {
-        short Max = 0, Min = 0;
-        for (int j = 0; j < samples_per_iteration * channels; j++)
+        for (int j = 0; j < samples_per_iteration; j++)
         {
-            short sample, s2;
-
-            if (audio_file.read((char *)&sample, 2).eof())
-            {
-                std::cout << "EOF reached\n";
-                return;
-            }
-
-            if (channels == 2) // discard a channel(for now)
-                audio_file.read((char *)&sample, 2);
-
-            if (j == 0)
-            {
-                Max = sample;
-                Min = sample;
-            }
-
-            Max = std::max(sample, Max);
-            Min = std::min(sample, Min);
+            short sample = read_sample(&audio_file, channels == 2);
         }
-        std::cout << "Iteration: " << i << " Min: " << Min << " Max: " << Max << '\n';
     }
 
     audio_file.close();
