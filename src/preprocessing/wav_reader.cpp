@@ -1,23 +1,22 @@
 #include <iostream>
 #include <fstream>
 
-short read_sample(std::ifstream *file, bool stereo)
+short read_sample(std::ifstream *file, int channels)
 {
-    short sample, right_channel;
+    int sample = 0;
+    short channel_sample = 0;
 
-    if (file->read((char *)&sample, 2).eof())
+    for (int i = 0; i < channels; i++)
     {
-        std::cout << "EOF reachedd\n";
-        return 0;
+        if (file->read((char *)&channel_sample, 2).eof())
+        {
+            std::cout << "EOF reachedd\n";
+            return 0;
+        }
+        sample += channel_sample;
     }
 
-    if (stereo) // take average of channels
-    {
-        file->read((char *)&right_channel, 2);
-        sample = (sample + right_channel) / 2;
-    }
-
-    return sample;
+    return (short)(sample / channels);
 }
 
 void read_wav(char *filepath)
@@ -42,12 +41,6 @@ void read_wav(char *filepath)
 
     std::cout << data_size << '\n';
 
-    if (channels > 2)
-    {
-        std::cout << "Too many channels. Parsing stopped.";
-        return;
-    }
-
     int bytes_per_sample = bits_per_sample >> 3;
     int samples_per_iteration = 100; // sliding window size
     int num_iterations = data_size / bytes_per_sample / samples_per_iteration / channels;
@@ -56,7 +49,7 @@ void read_wav(char *filepath)
     {
         for (int j = 0; j < samples_per_iteration; j++)
         {
-            short sample = read_sample(&audio_file, channels == 2);
+            short sample = read_sample(&audio_file, channels);
         }
     }
 
