@@ -24,8 +24,9 @@ hs_err_pid*
 replay_pid*
 
 
-
+/.vscode
 /build
 
 # audio samples for testing
 /audio
+/.vscode

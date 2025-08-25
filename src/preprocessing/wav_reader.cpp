@@ -1,5 +1,8 @@
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <vector>
+#include <assert.h>
 
 short read_sample(std::ifstream *file, int channels)
 {
@@ -21,7 +24,20 @@ short read_sample(std::ifstream *file, int channels)
 
 void read_wav(char *filepath)
 {
-    std::ifstream audio_file(filepath, std::ios::binary);
+
+    // resample audio to 11025hz
+    std::string file_string = std::string(filepath);
+    std::string ffmpeg_path = "..\\bin\\ffmpeg.exe"; // not cross platform yet
+    std::string resample_command = ffmpeg_path + " -loglevel error -y -i " + file_string + " -ar 11025 " + "temp.wav";
+
+    int resample_error = system(resample_command.c_str());
+    if (resample_error != 0)
+    {
+        std::cout << "Error with resampling " << resample_error << '\n';
+        return;
+    }
+
+    std::ifstream audio_file("temp.wav", std::ios::binary);
 
     char buf[32];
     audio_file.read(buf, 16); // skip intro
@@ -39,18 +55,19 @@ void read_wav(char *filepath)
     audio_file.read(buf, 4); // skip id
     audio_file.read((char *)&data_size, 4);
 
-    std::cout << data_size << '\n';
-
     int bytes_per_sample = bits_per_sample >> 3;
-    int samples_per_iteration = 100; // sliding window size
-    int num_iterations = data_size / bytes_per_sample / samples_per_iteration / channels;
 
-    for (int i = 0; i < num_iterations; i++)
+    int iterations_per_second = 100;
+
+    int samples_per_iteration = sample_rate / iterations_per_second; // sliding window size
+    int total_samples = data_size / bytes_per_sample / channels;
+    int num_iterations = total_samples / samples_per_iteration;
+
+    short *samples = new short[total_samples];
+
+    for (int i = 0; i < total_samples; i++)
     {
-        for (int j = 0; j < samples_per_iteration; j++)
-        {
-            short sample = read_sample(&audio_file, channels);
-        }
+        samples[i] = read_sample(&audio_file, channels);
     }
 
     audio_file.close();
