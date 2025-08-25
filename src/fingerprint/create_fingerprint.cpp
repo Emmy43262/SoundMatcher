@@ -8,6 +8,8 @@ const int window_size = 1024;
 const int overlap = 32;
 using cd = std::complex<double>;
 const double PI = acos(-1);
+const int num_bands = 6;
+const int bands[] = {10, 20, 40, 80, 160, 512};
 
 void fft(std::vector<cd> &a);
 void process_window(std::vector<short> window);
@@ -29,8 +31,8 @@ void create_fingerprint(char *filepath)
         }
         fft(current_window);
         std::vector<double> magnitudes;
-        for (auto &fr : current_window)
-            magnitudes.push_back(std::abs(fr));
+        for (int i = 0; i <= window_size / 2; i++)
+            magnitudes.push_back(std::abs(current_window[i]));
 
         spectrogram.push_back(magnitudes);
     }
@@ -38,6 +40,40 @@ void create_fingerprint(char *filepath)
     std::ofstream out("out.txt");
     for (auto it : spectrogram)
     {
+
+        std::vector<std::pair<int, double>> maxes;
+        for (int current_band = 0; current_band < num_bands; current_band++)
+        {
+            int band_start = (current_band == 0) ? 0 : (bands[current_band - 1] + 1);
+            int band_end = bands[current_band];
+
+            double max = -1e4;
+            int pos_max = 0;
+
+            for (int i = band_start; i <= band_end; i++)
+            {
+                if (it[i] > max)
+                {
+                    max = it[i];
+                    pos_max = i;
+                }
+                it[i] = 0;
+            }
+            maxes.push_back({pos_max, max});
+        }
+        double avg_maxes = 0;
+        for (auto mx : maxes)
+        {
+            avg_maxes += mx.second;
+        }
+        avg_maxes /= (double)num_bands;
+
+        for (auto mx : maxes)
+        {
+            if (mx.second >= avg_maxes)
+                it[mx.first] = mx.second;
+        }
+
         for (int i = 0; i < it.size(); i++)
         {
             out << it[i];
