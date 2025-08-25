@@ -22,7 +22,7 @@ short read_sample(std::ifstream *file, int channels)
     return (short)(sample / channels);
 }
 
-void read_wav(char *filepath)
+std::vector<short> read_wav(char *filepath)
 {
 
     // resample audio to 11025hz
@@ -33,8 +33,7 @@ void read_wav(char *filepath)
     int resample_error = system(resample_command.c_str());
     if (resample_error != 0)
     {
-        std::cout << "Error with resampling " << resample_error << '\n';
-        return;
+        throw("Error with resampling " + resample_error);
     }
 
     std::ifstream audio_file("temp.wav", std::ios::binary);
@@ -56,19 +55,15 @@ void read_wav(char *filepath)
     audio_file.read((char *)&data_size, 4);
 
     int bytes_per_sample = bits_per_sample >> 3;
-
-    int iterations_per_second = 100;
-
-    int samples_per_iteration = sample_rate / iterations_per_second; // sliding window size
     int total_samples = data_size / bytes_per_sample / channels;
-    int num_iterations = total_samples / samples_per_iteration;
 
-    short *samples = new short[total_samples];
+    std::vector<short> samples;
 
     for (int i = 0; i < total_samples; i++)
     {
-        samples[i] = read_sample(&audio_file, channels);
+        samples.push_back(read_sample(&audio_file, channels));
     }
 
     audio_file.close();
+    return samples;
 }

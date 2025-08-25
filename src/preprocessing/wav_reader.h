@@ -1,2 +1,3 @@
 #pragma once
-void read_wav(char *filepath);
+#include <vector>
+std::vector<short> read_wav(char *filepath);

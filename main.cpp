@@ -1,11 +1,11 @@
 #include <fstream>
 #include <iostream>
-#include "src/preprocessing/wav_reader.h"
+#include "src/fingerprint/create_fingerprint.h"
 
 int main()
 {
     char path[] = "../audio/crab.wav";
-    read_wav(path);
+    create_fingerprint(path);
 
     return 0;
 }
