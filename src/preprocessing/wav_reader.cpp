@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <cstring>
 #include <assert.h>
 
 short read_sample(std::ifstream *file, int channels)
@@ -13,8 +14,7 @@ short read_sample(std::ifstream *file, int channels)
     {
         if (file->read((char *)&channel_sample, 2).eof())
         {
-            std::cout << "EOF reachedd\n";
-            return 0;
+            throw("EOF reachedd\n");
         }
         sample += channel_sample;
     }
@@ -28,7 +28,7 @@ std::vector<short> read_wav(char *filepath)
     // resample audio to 11025hz
     std::string file_string = std::string(filepath);
     std::string ffmpeg_path = "..\\bin\\ffmpeg.exe"; // not cross platform yet
-    std::string resample_command = ffmpeg_path + " -loglevel error -y -i " + file_string + " -ar 11025 " + "temp.wav";
+    std::string resample_command = ffmpeg_path + " -loglevel error -y -i  " + file_string + " -ar 11025 -ac 1 -f wav -sample_fmt s16 -write_bext 0 " + "temp.wav";
 
     int resample_error = system(resample_command.c_str());
     if (resample_error != 0)
@@ -38,8 +38,7 @@ std::vector<short> read_wav(char *filepath)
 
     std::ifstream audio_file("temp.wav", std::ios::binary);
 
-    char buf[32];
-    audio_file.read(buf, 16); // skip intro
+    audio_file.ignore(16); // skip intro
 
     int size_header, sample_rate, byte_rate, data_size; // TODO create a header struct
     short type, channels, block_align, bits_per_sample;
@@ -51,11 +50,19 @@ std::vector<short> read_wav(char *filepath)
     audio_file.read((char *)&block_align, 2);
     audio_file.read((char *)&bits_per_sample, 2);
 
-    audio_file.read(buf, 4); // skip id
+    char buf[8];
+    audio_file.read(buf, 4); // get next title
+    buf[4] = (char)NULL;
+    if (strcmp(buf, "LIST") == 0)
+    {
+        int list_size = 0;
+        audio_file.read((char *)&list_size, 4);
+        audio_file.ignore(list_size + 4); // include next id
+    }
     audio_file.read((char *)&data_size, 4);
 
-    int bytes_per_sample = bits_per_sample >> 3;
-    int total_samples = data_size / bytes_per_sample / channels;
+    int bytes_per_channel = bits_per_sample >> 3;
+    int total_samples = data_size / bytes_per_channel / channels;
 
     std::vector<short> samples;
 
