@@ -5,37 +5,44 @@
 #include <complex.h>
 #include <unordered_map>
 #include <string>
+#include "create_fingerprint.h"
+#include <cassert>
 
 typedef unsigned long long ull;
-typedef std::unordered_map<ull, std::vector<std::pair<int, std::string>>> hash_map;
+typedef std::complex<double> cd;
 
 const int window_size = 1024;
-const int overlap = 32;
-using cd = std::complex<double>;
+const int overlap = 512;
 const double PI = acos(-1);
 const int num_bands = 6;
-const int bands[] = {10, 20, 40, 80, 160, 512};
+const int bands[] = {10, 20, 40, 80, 160, 500};
 
 void fft(std::vector<cd> &a);
 
 ull get_hash(short fr1, short fr2, short delta);
 
-hash_map create_fingerprint(char *filepath)
+song_hash_map create_fingerprint(char *filepath, int song_id)
 {
 
     std::vector<short> samples = read_wav(filepath);
+    double song_length = (double)samples.size() / 11025.0;
 
-    int num_windows = 1 + (samples.size() - window_size) / (window_size - overlap); // ensure does not overflow
+    int num_windows = samples.size() / (window_size - overlap); // ensure does not overflow
 
     std::vector<std::vector<double>> spectrogram;
+
+    std::vector<double> hamming;
+    for (int i = 0; i < window_size; i++)
+        hamming.push_back(0.54 - 0.46 * cos(2.0 * PI * i / (window_size - 1)));
 
     for (int i = 0; i < num_windows; i++)
     {
         std::vector<cd> current_window;
-        for (int j = i * (window_size - overlap); j < i * (window_size - overlap) + window_size; j++)
-        {
-            current_window.push_back(cd((double)samples[j], 0));
-        }
+        int start = i * (window_size - overlap);
+
+        for (int j = start; j < start + window_size; j++)
+            current_window.push_back(cd((double)samples[j] * hamming[j - start], 0));
+
         fft(current_window);
         std::vector<double> magnitudes;
         for (int i = 0; i <= window_size / 2; i++)
@@ -46,8 +53,10 @@ hash_map create_fingerprint(char *filepath)
 
     std::ofstream out("out.txt");
 
-    std::vector<std::vector<short>> peaks;
-    for (auto it : spectrogram)
+    // std::vector<std::vector<short>> peaks;
+    std::vector<Peak> peaks;
+
+    for (int slice = 0; slice < spectrogram.size(); slice++)
     {
         std::vector<std::pair<int, double>> maxes;
         for (int current_band = 0; current_band < num_bands; current_band++)
@@ -60,79 +69,79 @@ hash_map create_fingerprint(char *filepath)
 
             for (int i = band_start; i <= band_end; i++)
             {
-                if (it[i] > max)
+                if (spectrogram[slice][i] > max)
                 {
-                    max = it[i];
+                    max = spectrogram[slice][i];
                     pos_max = i;
                 }
-                it[i] = 0;
+                spectrogram[slice][i] = 0;
             }
             maxes.push_back({pos_max, max});
         }
+
         double avg_maxes = 0;
         for (auto mx : maxes)
-        {
             avg_maxes += mx.second;
-        }
         avg_maxes /= (double)num_bands;
-
-        std::vector<short> peaks_slice;
 
         for (auto mx : maxes)
         {
-
             if (mx.second >= avg_maxes)
             {
-                peaks_slice.push_back((short)mx.first);
-                it[mx.first] = mx.second;
-            }
-            else
-            {
-                peaks_slice.push_back(0);
+                peaks.push_back(Peak((double)slice / spectrogram.size() * song_length, (short)mx.first));
+
+                spectrogram[slice][mx.first] = mx.second;
             }
         }
 
-        peaks.push_back(std::vector<short>(peaks_slice));
+        // peaks.push_back(std::vector<short>(peaks_slice)); // peaks[i] = a peak slice
 
-        for (int i = 0; i < it.size(); i++)
-        {
-            out << it[i];
-            if (i + 1 != it.size())
-                out << ", ";
-        }
-        out << '\n';
+        // for (int i = 0; i < it.size(); i++)
+        //{
+        // out << it[i];
+        // if (i + 1 != it.size())
+        //     out << ", ";
+        //}
+        // out << '\n';
     }
     out.close();
 
-    const int w = 4, v_off = 2;
-    std::unordered_map<ull, std::vector<std::pair<int, std::string>>> hashes;
+    const int max_delta = 10;
+    song_hash_map hashes;
 
-    for (int col = 0; col < peaks.size(); col++)
+    for (int i = 0; i < peaks.size(); i++)
+        for (int j = 1; j <= max_delta && i + j < peaks.size(); j++)
+        {
+            short delta_ms = (peaks[i + j].time - peaks[i].time) * 1000.0;
+            hashes[get_hash(peaks[i].frequency, peaks[i + j].frequency, delta_ms)] = {peaks[i].time, song_id};
+        }
+
+    /*for (int col = 0; col < peaks.size(); col++)
     {
-        for (int row = 0; row < peaks[col].size(); row++)
+        for (int row = 0; row < num_bands; row++)
         {
             if (peaks[col][row] == 0)
                 continue;
 
-            for (int i = std::max(0, row - v_off); i < std::min((int)peaks[col].size(), row + v_off); i++)
+            for (int i = std::max(0, row - v_off); i < std::min(num_bands, row + v_off); i++)
             {
-                for (int j = col + 1; j <= col + w && j <= peaks.size(); j++)
+                for (int j = col + 1; j <= col + w && j < peaks.size(); j++)
                 {
-                    if (peaks[i][j] == 0)
+                    if (peaks[j][i] == 0)
                         continue;
 
-                    hashes[get_hash(peaks[col][row], peaks[i][j], i - col)].push_back({col, std::string(filepath)}); // todo Song ids
+                    hashes[get_hash(peaks[col][row], peaks[j][i], j - col)].push_back({col, song_id});
                 }
             }
         }
-    }
+    }*/
 
     return hashes;
 }
 
 ull get_hash(short fr1, short fr2, short delta)
 {
-    return fr1 << 32 + fr2 << 16 + delta;
+    return ((ull)fr1 << 32) + ((ull)fr2 << 16ll) + (ull)delta;
 }
 
 void fft(std::vector<cd> &a)
