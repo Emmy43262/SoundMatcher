@@ -8,6 +8,7 @@ add_executable(
     main.cpp 
     src/preprocessing/wav_reader.cpp 
     src/fingerprint/create_fingerprint.cpp
+    src/database/db.cpp
     external/sqlite/sqlite3.c
 )
 

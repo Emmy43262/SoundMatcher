@@ -8,7 +8,6 @@
 #include "create_fingerprint.h"
 #include <cassert>
 
-typedef unsigned long long ull;
 typedef std::complex<double> cd;
 
 const int window_size = 1024;
@@ -19,7 +18,7 @@ const double PI = acos(-1);
 
 void fft(std::vector<cd> &a);
 
-ull get_hash(short fr1, short fr2, short delta);
+ll get_hash(short fr1, short fr2, short delta);
 
 std::pair<int, double> get_band_max(std::vector<double> &magnitudes, int band)
 {
@@ -114,9 +113,9 @@ song_hash_map create_fingerprint(char *filepath, int song_id)
     return hashes;
 }
 
-ull get_hash(short fr1, short fr2, short delta)
+ll get_hash(short fr1, short fr2, short delta)
 {
-    return ((ull)fr1 << 32) + ((ull)fr2 << 16ll) + (ull)delta;
+    return ((ll)fr1 << 32) + ((ll)fr2 << 16ll) + (ll)delta;
 }
 
 void fft(std::vector<cd> &a)

@@ -2,9 +2,9 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
-typedef unsigned long long ull;
-typedef std::unordered_map<ull, std::vector<std::pair<double, int>>> db_hash_map;
-typedef std::unordered_map<ull, std::pair<double, int>> song_hash_map;
+typedef long long ll;
+typedef std::unordered_map<ll, std::vector<std::pair<double, int>>> db_hash_map;
+typedef std::unordered_map<ll, std::pair<double, int>> song_hash_map;
 
 struct Peak
 {
@@ -14,4 +14,4 @@ struct Peak
 };
 
 song_hash_map create_fingerprint(char *filepath, int song_id);
-ull get_hash(short fr1, short fr2, short delta);
+ll get_hash(short fr1, short fr2, short delta);

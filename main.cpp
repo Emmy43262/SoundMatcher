@@ -4,18 +4,22 @@
 #include <vector>
 #include "src/fingerprint/create_fingerprint.h"
 #include <sqlite3.h>
+#include "src/database/db.h"
 
 void add_to_db(db_hash_map &db, song_hash_map &fp);
 std::unordered_map<int, int> match_fingerprint(db_hash_map &db, song_hash_map &fp);
 
 int main()
 {
-    sqlite3 *DB;
 
-    sqlite3_open("fingerprints.db", &DB);
+    DB *mydb = new DB();
 
-    const char *create_table = "CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY, name TEXT);";
-    sqlite3_exec(DB, create_table, nullptr, nullptr, nullptr);
+    Song song1(-1, "Crab Rave", "Noisestorm");
+    mydb->add_song(song1);
+
+    mydb->diplay_songs();
+
+    return 0;
 
     db_hash_map db;
 
@@ -48,7 +52,7 @@ std::unordered_map<int, int> match_fingerprint(db_hash_map &db, song_hash_map &f
 
     for (auto sample : fp)
     {
-        ull h = sample.first;
+        ll h = sample.first;
 
         for (auto match : db[h])
         {
@@ -83,7 +87,7 @@ void add_to_db(db_hash_map &db, song_hash_map &fp)
     int ans = 0;
     for (auto it : fp)
     {
-        ull hash = it.first;
+        ll hash = it.first;
 
         ans++;
         db[hash].push_back({it.second.first, it.second.second});
