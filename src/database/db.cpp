@@ -182,7 +182,7 @@ Song DB::get_song(int song_id)
 
 void DB::init_db(sqlite3 **database)
 {
-    std::cout << "Initializing database...\n";
+    // std::cout << "Initializing database...\n";
     int rc = sqlite3_open("sound_matcher.db", database);
     if (rc != SQLITE_OK)
     {
@@ -206,7 +206,7 @@ void DB::init_db(sqlite3 **database)
         std::cerr << "Error creating fingerprints table: " << err << "\n";
         exit(1);
     }
-    std::cout << "Database initialized successfully.\n\n";
+    // std::cout << "Database initialized successfully.\n\n";
 }
 
 void DB::delete_all()
