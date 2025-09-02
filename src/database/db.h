@@ -27,6 +27,7 @@ public:
     DB();
     void add_song(Song &song);
     void add_hashes(int song_id, song_hash_map &hashes);
+    matches_hash_map get_matching_hashes(song_hash_map &fp);
     void diplay_songs();
     ~DB();
 

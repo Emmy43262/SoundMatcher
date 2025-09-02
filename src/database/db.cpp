@@ -36,7 +36,6 @@ void DB::add_song(Song &song)
     }
 
     song.id = sqlite3_last_insert_rowid(db);
-    std::cout << "Inserted song with ID: " << song.id << "\n";
 
     sqlite3_finalize(stmt);
 }
@@ -76,6 +75,54 @@ void DB::add_hashes(int song_id, song_hash_map &hashes)
     sqlite3_exec(db, "END TRANSACTION;", NULL, NULL, NULL);
 
     sqlite3_finalize(stmt);
+}
+
+matches_hash_map DB::get_matching_hashes(song_hash_map &fp)
+{
+    matches_hash_map matches;
+
+    std::string sql = "SELECT song_id, time FROM fingerprints WHERE hash IN (";
+    for (size_t i = 0; i < fp.size(); i++)
+    {
+        sql += (i == fp.size() - 1) ? "?" : "?, ";
+    }
+    sql += ");";
+
+    sqlite3_stmt *stmt = nullptr;
+
+    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+        return matches;
+    }
+
+    int index = 1;
+    for (auto &entry : fp)
+        sqlite3_bind_int64(stmt, index++, entry.first);
+
+    rc = sqlite3_step(stmt);
+
+    while (rc == SQLITE_ROW)
+    {
+        int song_id = sqlite3_column_int(stmt, 0);
+        double time = sqlite3_column_double(stmt, 1);
+        ll hash = sqlite3_column_int64(stmt, 0);
+
+        matches[song_id].push_back({time * 1000, fp[hash].first * 1000});
+
+        rc = sqlite3_step(stmt);
+    }
+
+    if (rc != SQLITE_DONE)
+    {
+        std::cerr << "Error querying hashes: " << sqlite3_errmsg(db) << "\n";
+        sqlite3_finalize(stmt);
+        return matches;
+    }
+
+    sqlite3_finalize(stmt);
+    return matches;
 }
 
 void DB::diplay_songs()
