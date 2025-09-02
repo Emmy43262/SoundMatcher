@@ -41,6 +41,43 @@ void DB::add_song(Song &song)
     sqlite3_finalize(stmt);
 }
 
+void DB::add_hashes(int song_id, song_hash_map &hashes)
+{
+    std::string sql = "INSERT INTO fingerprints (hash, song_id, time) VALUES (?, ?, ?);";
+    sqlite3_stmt *stmt = nullptr;
+
+    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+        return;
+    }
+
+    sqlite3_exec(db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
+
+    for (const auto &entry : hashes)
+    {
+        ll hash = entry.first;
+        double time = entry.second.first;
+
+        sqlite3_bind_int64(stmt, 1, hash);
+        sqlite3_bind_int(stmt, 2, song_id);
+        sqlite3_bind_double(stmt, 3, time);
+
+        rc = sqlite3_step(stmt);
+        if (rc != SQLITE_DONE)
+        {
+            std::cerr << "Error inserting hash: " << sqlite3_errmsg(db) << "\n";
+        }
+
+        sqlite3_reset(stmt);
+    }
+
+    sqlite3_exec(db, "END TRANSACTION;", NULL, NULL, NULL);
+
+    sqlite3_finalize(stmt);
+}
+
 void DB::diplay_songs()
 {
     std::cout << "Displaying songs in the database:\n";

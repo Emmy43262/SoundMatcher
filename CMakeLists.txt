@@ -7,7 +7,8 @@ add_executable(
     SoundMatcher 
     main.cpp 
     src/preprocessing/wav_reader.cpp 
-    src/fingerprint/create_fingerprint.cpp
+    src/fingerprint/create.cpp
+    src/fingerprint/match.cpp
     src/database/db.cpp
     external/sqlite/sqlite3.c
 )

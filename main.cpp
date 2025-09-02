@@ -1,10 +1,11 @@
+#include "src/database/db.h"
+#include "src/fingerprint/create.h"
+
 #include <fstream>
 #include <iostream>
 #include <unordered_map>
 #include <vector>
-#include "src/fingerprint/create_fingerprint.h"
 #include <sqlite3.h>
-#include "src/database/db.h"
 
 void add_to_db(db_hash_map &db, song_hash_map &fp);
 std::unordered_map<int, int> match_fingerprint(db_hash_map &db, song_hash_map &fp);
@@ -14,20 +15,16 @@ int main()
 
     DB *mydb = new DB();
 
-    Song song1(-1, "Crab Rave", "Noisestorm");
-    mydb->add_song(song1);
-
-    mydb->diplay_songs();
+    Song song1(0, "Crab Rave", "Noisestorm", "../audio/crab.wav");
+    process_song(song1, *mydb);
 
     return 0;
 
-    db_hash_map db;
+    /*db_hash_map db;
 
-    char path1[] = "../audio/crab.wav";
     char path2[] = "../audio/fh4.wav";
     char path3[] = "../audio/sample_crab.wav";
 
-    song_hash_map fp1 = create_fingerprint(path1, 1);
     add_to_db(db, fp1);
     fp1 = {};
 
@@ -41,7 +38,7 @@ int main()
     for (auto it : match_score)
     {
         std::cout << "Song " << it.first << " has score " << it.second << "\n";
-    }
+    }*/
 
     return 0;
 }

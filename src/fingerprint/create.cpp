@@ -1,12 +1,15 @@
+#include "create.h"
 #include <preprocessing/wav_reader.h>
+#include <database/db.h>
+
 #include <vector>
 #include <iostream>
 #include <fstream>
 #include <complex.h>
 #include <unordered_map>
 #include <string>
-#include "create_fingerprint.h"
 #include <cassert>
+#include <chrono>
 
 typedef std::complex<double> cd;
 
@@ -50,9 +53,8 @@ double get_max_average(std::vector<std::pair<int, double>> &maxes)
     return sum / (double)maxes.size();
 }
 
-song_hash_map create_fingerprint(char *filepath, int song_id)
+song_hash_map create_fingerprint(std::vector<short> samples, int song_id)
 {
-    std::vector<short> samples = read_wav(filepath);
     double song_length = (double)samples.size() / 11025.0;
 
     int num_windows = samples.size() / (window_size - overlap) - 1;
@@ -141,4 +143,27 @@ void fft(std::vector<cd> &a)
         a[i + n / 2] = a0[i] - w * a1[i];
         w *= wn;
     }
+}
+
+void process_song(Song &song, DB &db)
+{
+    if (song.filepath == "")
+    {
+        std::cerr << "Filepath for song " << song.title << " is empty!\n";
+        return;
+    }
+
+    std::cout << "Processing song: " << song.title << " by " << song.author << "\n";
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+    db.add_song(song);
+    std::vector<short> song_samples = read_wav((char *)song.filepath.c_str());
+    song_hash_map fingerprint = create_fingerprint(song_samples, song.id);
+    db.add_hashes(song.id, fingerprint);
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+    std::cout << "Added " << fingerprint.size() << " hashes for song ID: " << song.id << "\n";
+    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " milliseconds\n";
 }

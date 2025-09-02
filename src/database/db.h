@@ -1,4 +1,5 @@
 #pragma once
+#include <fingerprint/commons.h>
 #include <sqlite3.h>
 #include <string>
 
@@ -7,7 +8,9 @@ struct Song
     int id;
     std::string title;
     std::string author;
+    std::string filepath;
     Song(int i, std::string t, std::string a) : id(i), title(t), author(a) {}
+    Song(int i, std::string t, std::string a, std::string f) : id(i), title(t), author(a), filepath(f) {}
 };
 
 struct Hash
@@ -23,6 +26,7 @@ class DB
 public:
     DB();
     void add_song(Song &song);
+    void add_hashes(int song_id, song_hash_map &hashes);
     void diplay_songs();
     ~DB();
 
