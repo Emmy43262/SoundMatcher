@@ -63,7 +63,6 @@ song_hash_map create_fingerprint(char *filepath, int song_id)
         hamming.push_back(0.54 - 0.46 * cos(2.0 * PI * i / (window_size - 1)));
 
     std::vector<std::vector<double>> spectrogram;
-
     for (int i = 0; i < num_windows; i++)
     {
         std::vector<cd> current_window;
@@ -93,8 +92,11 @@ song_hash_map create_fingerprint(char *filepath, int song_id)
         double avg_maxes = get_max_average(maxes);
 
         for (auto mx : maxes)
-            if (mx.second >= avg_maxes)
-                peaks.push_back(Peak(1.0 * slice * slice_duration, (short)mx.first));
+        {
+            if (mx.second < avg_maxes)
+                continue;
+            peaks.push_back(Peak(1.0 * slice * slice_duration, (short)mx.first));
+        }
     }
     spectrogram = {};
 
