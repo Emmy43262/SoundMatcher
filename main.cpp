@@ -3,12 +3,20 @@
 #include <unordered_map>
 #include <vector>
 #include "src/fingerprint/create_fingerprint.h"
+#include <sqlite3.h>
 
 void add_to_db(db_hash_map &db, song_hash_map &fp);
 std::unordered_map<int, int> match_fingerprint(db_hash_map &db, song_hash_map &fp);
 
 int main()
 {
+    sqlite3 *DB;
+
+    sqlite3_open("fingerprints.db", &DB);
+
+    const char *create_table = "CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY, name TEXT);";
+    sqlite3_exec(DB, create_table, nullptr, nullptr, nullptr);
+
     db_hash_map db;
 
     char path1[] = "../audio/crab.wav";
