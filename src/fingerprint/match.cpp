@@ -72,7 +72,7 @@ std::unordered_map<int, int> compute_scores(matches_hash_map &matches)
             }
         scores[song_id] = song_score;
     }
-    for (auto it : scores)
-        std::cout << "Song ID " << it.first << " has score " << it.second << "\n";
+    // for (auto it : scores)
+    //     std::cout << "Song ID " << it.first << " has score " << it.second << "\n";
     return scores;
 }

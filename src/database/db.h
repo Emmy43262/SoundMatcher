@@ -29,6 +29,7 @@ public:
     void add_hashes(int song_id, song_hash_map &hashes);
     matches_hash_map get_matching_hashes(song_hash_map &fp);
     Song get_song(int song_id);
+    void delete_all();
     void diplay_songs();
     ~DB();
 

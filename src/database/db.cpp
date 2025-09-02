@@ -208,3 +208,24 @@ void DB::init_db(sqlite3 **database)
     }
     std::cout << "Database initialized successfully.\n\n";
 }
+
+void DB::delete_all()
+{
+    const char *drop_fingerprints = "DROP TABLE IF EXISTS fingerprints;";
+    const char *drop_songs = "DROP TABLE IF EXISTS songs;";
+    char *err = 0;
+
+    int rc = sqlite3_exec(db, drop_fingerprints, nullptr, nullptr, &err);
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Error dropping fingerprints table: " << err << "\n";
+        return;
+    }
+
+    rc = sqlite3_exec(db, drop_songs, nullptr, nullptr, &err);
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Error dropping songs table: " << err << "\n";
+        return;
+    }
+}
