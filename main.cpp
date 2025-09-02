@@ -22,29 +22,9 @@ int main()
     process_song(song2, *mydb);
 
     std::pair<int, int> match = match_audio(std::string("../audio/sample_crab.wav"), mydb);
-    std::cout << "Best match: Song ID " << match.first << " with score " << match.second << "\n";
 
-    return 0;
-
-    /*db_hash_map db;
-
-    char path2[] = "../audio/fh4.wav";
-    char path3[] = "../audio/sample_crab.wav";
-
-    add_to_db(db, fp1);
-    fp1 = {};
-
-    song_hash_map fp2 = create_fingerprint(path2, 2);
-    add_to_db(db, fp2);
-    fp2 = {};
-
-    song_hash_map fp3 = create_fingerprint(path3, -1);
-
-    std::unordered_map<int, int> match_score = match_fingerprint(db, fp3);
-    for (auto it : match_score)
-    {
-        std::cout << "Song " << it.first << " has score " << it.second << "\n";
-    }*/
+    Song match_song = mydb->get_song(match.first);
+    std::cout << "Best match: " << match_song.title << " by " << match_song.author << " with score " << match.second << ".\n\n";
 
     return 0;
 }

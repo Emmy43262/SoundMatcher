@@ -47,7 +47,7 @@ std::pair<int, int> match_audio(std::vector<short> &audio_data, DB *db)
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " milliseconds\n";
+    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " milliseconds\n\n";
     return {best_song, best_score};
 }
 

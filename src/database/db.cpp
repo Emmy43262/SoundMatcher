@@ -149,6 +149,37 @@ void DB::diplay_songs()
     }
 }
 
+Song DB::get_song(int song_id)
+{
+    std::string sql = "SELECT title, author FROM songs WHERE id = ?;";
+    sqlite3_stmt *stmt = nullptr;
+    Song song(-1, "", "");
+
+    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+        return song;
+    }
+
+    sqlite3_bind_int(stmt, 1, song_id);
+
+    rc = sqlite3_step(stmt);
+    if (rc == SQLITE_ROW)
+    {
+        const unsigned char *title = sqlite3_column_text(stmt, 0);
+        const unsigned char *author = sqlite3_column_text(stmt, 1);
+        song = Song(song_id, std::string(reinterpret_cast<const char *>(title)), std::string(reinterpret_cast<const char *>(author)));
+    }
+    else
+    {
+        std::cerr << "No song found with ID: " << song_id << "\n";
+    }
+
+    sqlite3_finalize(stmt);
+    return song;
+}
+
 void DB::init_db(sqlite3 **database)
 {
     std::cout << "Initializing database...\n";
@@ -175,5 +206,5 @@ void DB::init_db(sqlite3 **database)
         std::cerr << "Error creating fingerprints table: " << err << "\n";
         exit(1);
     }
-    std::cout << "Database initialized successfully.\n";
+    std::cout << "Database initialized successfully.\n\n";
 }

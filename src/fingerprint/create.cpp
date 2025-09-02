@@ -101,7 +101,7 @@ song_hash_map create_fingerprint(std::vector<short> samples, int song_id)
     }
     spectrogram = {};
 
-    const int max_delta = 10;
+    const int max_delta = 6;
     song_hash_map hashes;
 
     for (int root = 0; root < peaks.size(); root++)
@@ -165,5 +165,5 @@ void process_song(Song &song, DB &db)
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
     std::cout << "Added " << fingerprint.size() << " hashes for song ID: " << song.id << "\n";
-    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " milliseconds\n";
+    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " milliseconds\n\n";
 }
