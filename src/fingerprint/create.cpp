@@ -55,9 +55,10 @@ double get_max_average(std::vector<std::pair<int, double>> &maxes)
 
 db_hash_map create_fingerprint(std::vector<short> samples, int song_id)
 {
-    double song_length = (double)samples.size() / 11025.0;
+    double song_length = (double)samples.size() / 11025.0;            // in seconds
+    double slice_time_difference = (window_size - overlap) / 11025.0; // in seconds
 
-    int num_windows = samples.size() / (window_size - overlap) - 1;
+    int num_windows = (samples.size() - window_size) / (window_size - overlap);
 
     std::vector<double> hamming;
     for (int i = 0; i < window_size; i++)
@@ -95,7 +96,6 @@ db_hash_map create_fingerprint(std::vector<short> samples, int song_id)
     }*/
 
     std::vector<Peak> peaks;
-    double slice_duration = song_length / (double)spectrogram.size();
     for (int slice = 0; slice < spectrogram.size(); slice++)
     {
         std::vector<std::pair<int, double>> maxes;
@@ -108,7 +108,7 @@ db_hash_map create_fingerprint(std::vector<short> samples, int song_id)
         {
             if (mx.second < avg_maxes)
                 continue;
-            peaks.push_back(Peak(1.0 * slice * slice_duration, (short)mx.first));
+            peaks.push_back(Peak(1.0 * slice * slice_time_difference, (short)mx.first));
         }
     }
     spectrogram = {};
