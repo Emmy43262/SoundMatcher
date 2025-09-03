@@ -136,25 +136,33 @@ ll get_hash(short fr1, short fr2, short delta)
 void fft(std::vector<cd> &a)
 {
     int n = a.size();
-    if (n == 1)
-        return;
 
-    std::vector<cd> a0(n / 2), a1(n / 2);
-    for (int i = 0; 2 * i < n; i++)
+    for (int i = 1, j = 0; i < n; i++)
     {
-        a0[i] = a[2 * i];
-        a1[i] = a[2 * i + 1];
+        int bit = n >> 1;
+        for (; j & bit; bit >>= 1)
+            j ^= bit;
+        j ^= bit;
+
+        if (i < j)
+            swap(a[i], a[j]);
     }
-    fft(a0);
-    fft(a1);
 
-    double ang = 2 * PI / n;
-    cd w(1), wn(cos(ang), sin(ang));
-    for (int i = 0; 2 * i < n; i++)
+    for (int len = 2; len <= n; len <<= 1)
     {
-        a[i] = a0[i] + w * a1[i];
-        a[i + n / 2] = a0[i] - w * a1[i];
-        w *= wn;
+        double ang = 2 * PI / len;
+        cd wlen(cos(ang), sin(ang));
+        for (int i = 0; i < n; i += len)
+        {
+            cd w(1);
+            for (int j = 0; j < len / 2; j++)
+            {
+                cd u = a[i + j], v = a[i + j + len / 2] * w;
+                a[i + j] = u + v;
+                a[i + j + len / 2] = u - v;
+                w *= wlen;
+            }
+        }
     }
 }
 
