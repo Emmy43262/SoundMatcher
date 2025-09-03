@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (std::string(argv[1]) == "-a")
+    if (std::string(argv[1]) == "-a" && argc == 3)
     {
         std::ifstream file_check(argv[2]);
         if (!file_check.good())
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
         delete mydb;
         return 0;
     }
-    else if (std::string(argv[1]) == "-m")
+    else if (std::string(argv[1]) == "-m" && argc == 3)
     {
         std::ifstream file_check(argv[2]);
         if (!file_check.good())
@@ -75,14 +75,14 @@ int main(int argc, char *argv[])
         delete mydb;
         return 0;
     }
-    else if (std::string(argv[1]) == "-l")
+    else if (std::string(argv[1]) == "-l" && argc == 2)
     {
         DB *mydb = new DB();
         mydb->diplay_songs();
         delete mydb;
         return 0;
     }
-    else if (std::string(argv[1]) == "-clear")
+    else if (std::string(argv[1]) == "-clear" && argc == 2)
     {
         std::cout << "Clearing database...\n";
         DB *mydb = new DB();
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        std::cerr << "Unknown option: " << argv[1] << "\n";
+        std::cerr << "Unknown/misused option " << argv[1] << "\n";
         return 1;
     }
 
