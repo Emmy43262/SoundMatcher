@@ -40,7 +40,7 @@ void DB::add_song(Song &song)
     sqlite3_finalize(stmt);
 }
 
-void DB::add_hashes(int song_id, song_hash_map &hashes)
+void DB::add_hashes(int song_id, db_hash_map &hashes)
 {
     std::string sql = "INSERT INTO fingerprints (hash, song_id, time) VALUES (?, ?, ?);";
     sqlite3_stmt *stmt = nullptr;
@@ -57,19 +57,22 @@ void DB::add_hashes(int song_id, song_hash_map &hashes)
     for (const auto &entry : hashes)
     {
         ll hash = entry.first;
-        double time = entry.second.first;
-
-        sqlite3_bind_int64(stmt, 1, hash);
-        sqlite3_bind_int(stmt, 2, song_id);
-        sqlite3_bind_double(stmt, 3, time);
-
-        rc = sqlite3_step(stmt);
-        if (rc != SQLITE_DONE)
+        for (auto it : entry.second)
         {
-            std::cerr << "Error inserting hash: " << sqlite3_errmsg(db) << "\n";
-        }
+            double time = it.first;
 
-        sqlite3_reset(stmt);
+            sqlite3_bind_int64(stmt, 1, hash);
+            sqlite3_bind_int(stmt, 2, song_id);
+            sqlite3_bind_double(stmt, 3, time);
+
+            rc = sqlite3_step(stmt);
+            if (rc != SQLITE_DONE)
+            {
+                std::cerr << "Error inserting hash: " << sqlite3_errmsg(db) << "\n";
+            }
+
+            sqlite3_reset(stmt);
+        }
     }
 
     sqlite3_exec(db, "END TRANSACTION;", NULL, NULL, NULL);
@@ -81,7 +84,7 @@ matches_hash_map DB::get_matching_hashes(song_hash_map &fp)
 {
     matches_hash_map matches;
 
-    std::string sql = "SELECT song_id, time FROM fingerprints WHERE hash IN (";
+    std::string sql = "SELECT hash, song_id, time FROM fingerprints WHERE hash IN (";
     for (size_t i = 0; i < fp.size(); i++)
     {
         sql += (i == fp.size() - 1) ? "?" : "?, ";
@@ -105,8 +108,8 @@ matches_hash_map DB::get_matching_hashes(song_hash_map &fp)
 
     while (rc == SQLITE_ROW)
     {
-        int song_id = sqlite3_column_int(stmt, 0);
-        double time = sqlite3_column_double(stmt, 1);
+        int song_id = sqlite3_column_int(stmt, 1);
+        double time = sqlite3_column_double(stmt, 2);
         ll hash = sqlite3_column_int64(stmt, 0);
 
         matches[song_id].push_back({time * 1000, fp[hash].first * 1000});
@@ -199,7 +202,7 @@ void DB::init_db(sqlite3 **database)
         exit(1);
     }
 
-    const char *fingerprint_table = "CREATE TABLE IF NOT EXISTS fingerprints (hash BIGINT, song_id INTEGER, time REAL, FOREIGN KEY(song_id) REFERENCES songs(id) PRIMARY KEY(hash, song_id));";
+    const char *fingerprint_table = "CREATE TABLE IF NOT EXISTS fingerprints (hash BIGINT, song_id INTEGER, time REAL, FOREIGN KEY(song_id) REFERENCES songs(id) PRIMARY KEY(hash, song_id, time));";
     rc = sqlite3_exec(*database, fingerprint_table, nullptr, nullptr, &err);
     if (rc != SQLITE_OK)
     {

@@ -26,7 +26,7 @@ class DB
 public:
     DB();
     void add_song(Song &song);
-    void add_hashes(int song_id, song_hash_map &hashes);
+    void add_hashes(int song_id, db_hash_map &hashes);
     matches_hash_map get_matching_hashes(song_hash_map &fp);
     Song get_song(int song_id);
     void delete_all();

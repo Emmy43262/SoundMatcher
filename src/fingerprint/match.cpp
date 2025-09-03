@@ -29,8 +29,13 @@ std::pair<int, int> match_audio(std::vector<short> &audio_data, DB *db)
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    song_hash_map fingerprint = create_fingerprint(audio_data, -1);
-    matches_hash_map db_matches = db->get_matching_hashes(fingerprint);
+    db_hash_map fingerprint = create_fingerprint(audio_data, -1);
+
+    song_hash_map simplified_fp;
+    for (auto it : fingerprint)
+        simplified_fp[it.first] = it.second[0];
+
+    matches_hash_map db_matches = db->get_matching_hashes(simplified_fp);
 
     std::unordered_map<int, int> scores = compute_scores(db_matches);
 
@@ -60,19 +65,37 @@ std::unordered_map<int, int> compute_scores(matches_hash_map &matches)
         int song_id = song_matches.first;
         auto &match_times = song_matches.second;
 
+        // std::cout << "For song ID " << song_id << ", found " << match_times.size() << " matching hashes.\n";
+
         int song_score = 0;
 
-        for (int i = 0; i < match_times.size(); i++)
+        /*for (int i = 0; i < match_times.size(); i++)
             for (int j = i + 1; j < match_times.size(); j++)
             {
                 int db_delta = abs(match_times[j].first - match_times[i].first);
                 int sample_delta = abs(match_times[j].second - match_times[i].second);
                 if (abs(db_delta - sample_delta) <= 100)
                     song_score++;
+            }*/
+
+        std::unordered_map<int, int> histogram;
+        histogram = {};
+
+        for (auto &mt : match_times)
+        {
+            int delta = (mt.first - mt.second) / 200; // spectrogram bucket size
+            histogram[delta]++;
+            if (histogram[delta] > song_score)
+            {
+                song_score = histogram[delta];
             }
+        }
+
+        // for (auto it : histogram)
+        //     std::cout << "Delta: " << it.first << ", Count: " << it.second << "\n";
         scores[song_id] = song_score;
     }
-    // for (auto it : scores)
-    //     std::cout << "Song ID " << it.first << " has score " << it.second << "\n";
+    for (auto it : scores)
+        std::cout << "Song ID " << it.first << " has score " << it.second << "\n";
     return scores;
 }

@@ -12,6 +12,6 @@ struct Peak
     Peak(double t, int f) : time(t), frequency(f) {}
 };
 
-song_hash_map create_fingerprint(std::vector<short>, int song_id);
+db_hash_map create_fingerprint(std::vector<short>, int song_id);
 void process_song(Song &song, DB &db);
 ll get_hash(short fr1, short fr2, short delta);

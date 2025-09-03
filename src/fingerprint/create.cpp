@@ -14,7 +14,7 @@
 typedef std::complex<double> cd;
 
 const int window_size = 1024;
-const int overlap = 512;
+const int overlap = 1024 - 256;
 const int num_bands = 6;
 const int bands[] = {10, 20, 40, 80, 160, 500};
 const double PI = acos(-1);
@@ -53,7 +53,7 @@ double get_max_average(std::vector<std::pair<int, double>> &maxes)
     return sum / (double)maxes.size();
 }
 
-song_hash_map create_fingerprint(std::vector<short> samples, int song_id)
+db_hash_map create_fingerprint(std::vector<short> samples, int song_id)
 {
     double song_length = (double)samples.size() / 11025.0;
 
@@ -82,6 +82,18 @@ song_hash_map create_fingerprint(std::vector<short> samples, int song_id)
     hamming = {};
     samples = {};
 
+    /*std::ofstream spec("spec.csv");
+    for (int i = 0; i < spectrogram.size(); i++)
+    {
+        for (int j = 0; j < spectrogram[i].size(); j++)
+        {
+            spec << spectrogram[i][j] * spectrogram[i][j] * spectrogram[i][j];
+            if (j != spectrogram[i].size() - 1)
+                spec << ",";
+        }
+        spec << "\n";
+    }*/
+
     std::vector<Peak> peaks;
     double slice_duration = song_length / (double)spectrogram.size();
     for (int slice = 0; slice < spectrogram.size(); slice++)
@@ -101,15 +113,16 @@ song_hash_map create_fingerprint(std::vector<short> samples, int song_id)
     }
     spectrogram = {};
 
-    const int max_delta = 6;
-    song_hash_map hashes;
+    const int max_delta = 10;
+    const int offset = 0;
+    db_hash_map hashes;
 
     for (int root = 0; root < peaks.size(); root++)
-        for (int j = 1; j <= max_delta && root + j < peaks.size(); j++)
+        for (int j = 1; j <= max_delta && root + j + offset < peaks.size(); j++)
         {
-            int target = root + j;
+            int target = root + j + offset;
             short delta_ms = (peaks[target].time - peaks[root].time) * 1000;
-            hashes[get_hash(peaks[root].frequency, peaks[target].frequency, delta_ms)] = {peaks[root].time, song_id};
+            hashes[get_hash(peaks[root].frequency, peaks[target].frequency, delta_ms)].push_back({peaks[root].time, song_id});
         }
 
     return hashes;
@@ -159,7 +172,7 @@ void process_song(Song &song, DB &db)
 
     db.add_song(song);
     std::vector<short> song_samples = read_wav((char *)song.filepath.c_str());
-    song_hash_map fingerprint = create_fingerprint(song_samples, song.id);
+    db_hash_map fingerprint = create_fingerprint(song_samples, song.id);
     db.add_hashes(song.id, fingerprint);
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
